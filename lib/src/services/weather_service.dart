@@ -6,9 +6,10 @@ import 'package:http/http.dart' as http;
 
 class WeatherService {
   Future<List<WeatherForecastModel>> getWeatherForecast(
-    List<String> listCitySearch,
-  ) async {
+      List<String> listCitySearch,
+      ) async {
     final enumEnv = EnviromentEnum.constants;
+    print('CHAVE USADA NA REQUISIÇÃO: ${enumEnv.API_KEY}');
     final List<WeatherForecastModel> listCity = [];
 
     for (var city in listCitySearch) {
@@ -17,12 +18,22 @@ class WeatherService {
           '${enumEnv.API_BASE_URL}?key=${enumEnv.API_KEY}&city_name=$city',
         ),
       );
-      if (response.statusCode >= 200 || response.statusCode < 300) {
-        final jsonDecoded = jsonDecode(response.body)['results'];
+
+      // CORREÇÃO 1: Usar && em vez de || ()
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final jsonResponse = jsonDecode(response.body);
+
+        // CORREÇÃO 2: Verificar se a API retornou um erro (ex: chave inválida)
+        if (jsonResponse['results'] == null) {
+          print('ERRO DA API PARA $city: ${response.body}');
+          throw Exception('Cidade não encontrada ou chave de API inválida.');
+        }
+
+        final jsonDecoded = jsonResponse['results'];
         final model = WeatherForecastModel.fromJson(jsonDecoded);
         listCity.add(model);
       } else {
-        throw Exception('Erro ao carregar dados');
+        throw Exception('Erro ao carregar dados: ${response.statusCode}');
       }
     }
     return listCity;

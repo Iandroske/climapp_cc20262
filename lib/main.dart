@@ -8,7 +8,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -43,6 +42,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Climapp',
+        navigatorKey: NotificationService().navigatorKey,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           textTheme: GoogleFonts.montserratTextTheme(

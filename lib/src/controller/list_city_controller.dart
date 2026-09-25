@@ -1,11 +1,8 @@
-import 'dart:convert';
 
-import 'package:climapp_cc20262/src/enums/enviroments_enum.dart';
 import 'package:climapp_cc20262/src/models/weather_forecast_model.dart';
 import 'package:climapp_cc20262/src/services/device_info_service.dart';
 import 'package:climapp_cc20262/src/services/weather_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class ListCityController extends ChangeNotifier {
   ListCityController({
