@@ -5,7 +5,6 @@ import 'package:climapp_cc20262/src/widgets/city_tile_widget.dart';
 import 'package:flutter/material.dart';
 import '../services/weather_service.dart';
 
-
 class ListCityScreen extends StatefulWidget {
   const ListCityScreen({super.key});
 
@@ -18,11 +17,11 @@ class _ListCityScreenState extends State<ListCityScreen> {
 
   final ListCityController controller = ListCityController(
     deviceInfoService: DeviceInfoService(),
-    weatherService: WeatherService(), // Instanciando o serviço aqui
+    weatherService: WeatherService(),
   );
 
-@override
-void initState() {
+  @override
+  void initState() {
     super.initState();
     controller.loadCities();
   }
@@ -38,7 +37,7 @@ void initState() {
   Widget build(BuildContext context) {
     return Scaffold(
       body: DecoratedBox(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: <Color>[Color(0xFF00457D), Color(0xFF05051F)],
             begin: Alignment.topCenter,
@@ -46,9 +45,9 @@ void initState() {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            mainAxisSize: .max,
+            mainAxisSize: MainAxisSize.max,
             children: [
               const SizedBox(height: 25),
               TextField(
@@ -62,7 +61,7 @@ void initState() {
                   hintStyle: TextStyle(color: Colors.white),
                   suffixIcon: Icon(Icons.search, color: Colors.white),
                   border: OutlineInputBorder(
-                    borderSide: .none,
+                    borderSide: BorderSide.none,
                     borderRadius: BorderRadius.all(Radius.circular(30)),
                   ),
                 ),
@@ -74,6 +73,58 @@ void initState() {
                   builder: (context, _) {
                     if (controller.isLoading) {
                       return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (controller.errorMessage.isNotEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.wifi_off_rounded,
+                                size: 80,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Ops! Sem conexão',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                controller.errorMessage,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  controller.loadCities();
+                                },
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Tentar Novamente'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF7693FF),
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     }
                     return ListView.builder(
                       itemCount: controller.filteredCities.length,
@@ -99,7 +150,10 @@ void initState() {
                   },
                 ),
               ),
-            ]
-         )
-        );
-);
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
