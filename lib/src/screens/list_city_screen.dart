@@ -1,28 +1,29 @@
 import 'package:climapp_cc20262/src/controller/list_city_controller.dart';
-import 'package:climapp_cc20262/src/services/device_info_service.dart';
 import 'package:climapp_cc20262/src/screens/weather_city_screen.dart';
+import 'package:climapp_cc20262/src/services/device_info_service.dart';
+import 'package:climapp_cc20262/src/services/weather_service.dart';
 import 'package:climapp_cc20262/src/widgets/city_tile_widget.dart';
+import 'package:climapp_cc20262/src/widgets/offline_error_widget.dart';
 import 'package:flutter/material.dart';
-import '../services/weather_service.dart';
 
 class ListCityScreen extends StatefulWidget {
   const ListCityScreen({super.key});
 
   @override
-  _ListCityScreenState createState() => _ListCityScreenState();
+  State<ListCityScreen> createState() => _ListCityScreenState();
 }
 
 class _ListCityScreenState extends State<ListCityScreen> {
   final TextEditingController textController = TextEditingController();
-
-  final ListCityController controller = ListCityController(
-    deviceInfoService: DeviceInfoService(),
-    weatherService: WeatherService(),
-  );
+  late final ListCityController controller;
 
   @override
   void initState() {
     super.initState();
+    controller = ListCityController(
+      deviceInfoService: DeviceInfoService(),
+      weatherService: WeatherService(),
+    );
     controller.loadCities();
   }
 
@@ -47,6 +48,7 @@ class _ListCityScreenState extends State<ListCityScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
+            spacing: 15,
             mainAxisSize: MainAxisSize.max,
             children: [
               const SizedBox(height: 25),
@@ -55,7 +57,7 @@ class _ListCityScreenState extends State<ListCityScreen> {
                 controller: textController,
                 onChanged: controller.filterCities,
                 decoration: const InputDecoration(
-                  fillColor: Color(0xff15ffffff),
+                  fillColor: Color(0x15FFFFFF),
                   filled: true,
                   hintText: 'Digite uma cidade',
                   hintStyle: TextStyle(color: Colors.white),
@@ -66,86 +68,21 @@ class _ListCityScreenState extends State<ListCityScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 15),
               Expanded(
                 child: ListenableBuilder(
                   listenable: controller,
                   builder: (context, _) {
-                    if (controller.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (controller.errorMessage.isNotEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.wifi_off_rounded,
-                                size: 80,
-                                color: Colors.white70,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Ops! Sem conexão',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                controller.errorMessage,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  controller.loadCities();
-                                },
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Tentar Novamente'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF7693FF),
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      itemCount: controller.filteredCities.length,
-                      itemBuilder: (context, index) {
-                        final city = controller.filteredCities[index];
-                        return CityTileWidget(
-                          cityName: city.cityName,
-                          icon: city.conditionSlug,
-                          temperature: city.temp,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => WeatherCityScreen(
-                                  weatherForecastModel: city,
-                                ),
-                              ),
-                            );
-                          },
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      switchInCurve: Curves.easeIn,
+                      switchOutCurve: Curves.easeOut,
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
                         );
                       },
+                      child: _buildStateContent(controller),
                     );
                   },
                 ),
@@ -154,6 +91,56 @@ class _ListCityScreenState extends State<ListCityScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStateContent(ListCityController controller) {
+    if (controller.isLoading) {
+      return const Center(
+        key: ValueKey('loading_state'),
+        child: CircularProgressIndicator(color: Color(0xFF7693FF)),
+      );
+    }
+
+    if (controller.errorMessage.isNotEmpty) {
+      return OfflineErrorWidget(
+        key: const ValueKey('error_state'),
+        errorMessage: controller.errorMessage,
+        onRetry: controller.loadCities,
+      );
+    }
+
+    if (controller.filteredCities.isEmpty) {
+      return const Center(
+        key: ValueKey('empty_state'),
+        child: Text(
+          'Nenhuma cidade encontrada.',
+          style: TextStyle(color: Colors.white70, fontSize: 18),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      key: const ValueKey('success_state'),
+      itemCount: controller.filteredCities.length,
+      itemBuilder: (context, index) {
+        final city = controller.filteredCities[index];
+        return CityTileWidget(
+          cityName: city.cityName,
+          icon: city.conditionSlug,
+          temperature: city.temp,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WeatherCityScreen(
+                  weatherForecastModel: city,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

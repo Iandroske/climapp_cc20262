@@ -1,5 +1,6 @@
 import 'package:climapp_cc20262/src/screens/list_city_screen.dart';
 import 'package:climapp_cc20262/src/services/device_info_service.dart';
+import 'package:climapp_cc20262/src/widgets/country_badge_widget.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -17,15 +18,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    _countryCode = _deviceInfoService.getCountryCode();
-    _flagEmoji = _deviceInfoService.getFlagEmoji(_countryCode);
+    _loadDeviceCountry();
+  }
+
+  Future<void> _loadDeviceCountry() async {
+    final code = await _deviceInfoService.getDeviceCountry();
+    if (!mounted) return;
+    setState(() {
+      _countryCode = code;
+      _flagEmoji = _deviceInfoService.getFlagEmoji(code);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: DecoratedBox(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: <Color>[Color(0xFF00457D), Color(0xFF05051F)],
             begin: Alignment.topCenter,
@@ -33,56 +42,65 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            spacing: 40,
+            spacing: 30,
             children: [
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               Image.asset("assets/logo_climapp.png", width: 200),
               Image.asset("assets/ilustracao_home.png", width: 250),
-
-
               Column(
+                spacing: 12,
                 children: [
-                  Text(
+                  const Text(
                     'Boas-vindas!',
-                    style: TextStyle(color: Colors.white, fontSize: 30),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    '$_flagEmoji $_countryCode', // Exibe a bandeira e o código (ex: 🇧🇷 BR)
-                    style: TextStyle(color: Colors.white70, fontSize: 20),
+                  CountryBadgeWidget(
+                    flagEmoji: _flagEmoji,
+                    countryCode: _countryCode,
                   ),
                 ],
               ),
-
-              Spacer(),
+              const Spacer(),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ListCityScreen()),
+                      MaterialPageRoute(builder: (context) => const ListCityScreen()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF7693FF),
+                    backgroundColor: const Color(0xFF7693FF),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
-                  child: Row(
+                  child: const Row(
                     spacing: 10,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         'Entrar',
-                        style: TextStyle(color: Colors.black, fontSize: 25),
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Icon(Icons.arrow_forward, color: Colors.black, size: 25),
                     ],
                   ),
                 ),
               ),
-              Spacer(),
+              const Spacer(),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:climapp_cc20262/src/core/result.dart';
 import 'package:climapp_cc20262/src/models/weather_forecast_model.dart';
 import 'package:climapp_cc20262/src/services/device_info_service.dart';
 import 'package:climapp_cc20262/src/services/weather_service.dart';
@@ -34,12 +35,15 @@ class ListCityController extends ChangeNotifier {
   ];
 
   void _listenToConnectivity() {
+    _connectivitySubscription?.cancel();
     _connectivitySubscription = Connectivity()
         .onConnectivityChanged
         .listen((List<ConnectivityResult> results) {
       if (results.contains(ConnectivityResult.none)) {
-        errorMessage = 'Sem conexão com a internet.';
+        errorMessage = 'Sem conexão com a internet. Verifique sua rede.';
         isLoading = false;
+        allCities = [];
+        filteredCities = [];
         notifyListeners();
       } else {
         loadCities();
@@ -54,26 +58,26 @@ class ListCityController extends ChangeNotifier {
 
     _deviceCountry = await deviceInfoService.getDeviceCountry();
 
-    try {
-      allCities = await weatherService.getWeatherForecast(listCitySearch);
-      filteredCities = List.from(allCities);
+    final result = await weatherService.getWeatherForecast(listCitySearch);
 
-      debugPrint('====================================');
-      debugPrint('Este é o país do celular: $_deviceCountry');
-      debugPrint('====================================');
+    switch (result) {
+      case Success(data: final cities):
+        allCities = cities;
+        filteredCities = List.from(allCities);
+        errorMessage = '';
+        debugPrint('====================================');
+        debugPrint('Este é o país do celular: $_deviceCountry');
+        debugPrint('====================================');
 
-    } on TimeoutException catch (e) {
-      errorMessage = e.message!;
-      debugPrint('Erro de Timeout: $errorMessage');
-
-    } catch (e) {
-      errorMessage = 'Ocorreu um erro ao carregar as cidades.';
-      debugPrint('Erro genérico: $e');
-
-    } finally {
-      isLoading = false;
-      notifyListeners();
+      case Failure(exception: final exception):
+        errorMessage = exception.message;
+        allCities = [];
+        filteredCities = [];
+        debugPrint('Erro ao carregar cidades: ${exception.message} (Código: ${exception.code})');
     }
+
+    isLoading = false;
+    notifyListeners();
   }
 
   void filterCities(String query) {
@@ -83,7 +87,7 @@ class ListCityController extends ChangeNotifier {
       filteredCities = allCities
           .where(
             (city) => city.cityName.toLowerCase().contains(query.toLowerCase()),
-      )
+          )
           .toList();
     }
     notifyListeners();
@@ -92,6 +96,7 @@ class ListCityController extends ChangeNotifier {
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
+    _connectivitySubscription = null;
     super.dispose();
   }
 }

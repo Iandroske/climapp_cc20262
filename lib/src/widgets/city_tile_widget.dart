@@ -23,7 +23,7 @@ class CityTileWidget extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xff15ffffff),
+        color: const Color(0x15FFFFFF),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Material(
@@ -31,7 +31,7 @@ class CityTileWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         child: ListTile(
           onTap: onTap,
-          leading: SvgPicture.network('${envEnum.IMAGE_URL}$icon.svg'),
+          leading: SvgPicture.network('${envEnum.imageUrl}$icon.svg'),
           titleTextStyle: const TextStyle(fontSize: 20),
           textColor: Colors.white,
           title: Text(cityName, textAlign: TextAlign.center),
