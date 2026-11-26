@@ -53,6 +53,13 @@ class NotFoundException extends ApiException {
   ]) : super(statusCode: 404, code: 'NOT_FOUND');
 }
 
+/// Exceção lançada durante falhas de persistência ou consulta no banco de dados SQLite local.
+class DatabaseAppException extends AppException {
+  const DatabaseAppException([
+    super.message = 'Erro ao acessar o banco de dados local. Tente novamente.',
+  ]) : super(code: 'DATABASE_ERROR');
+}
+
 /// Exceção para erros não mapeados ou falhas inesperadas.
 class UnknownException extends AppException {
   const UnknownException([
