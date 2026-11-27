@@ -103,6 +103,18 @@ class DatabaseHelper {
     }
   }
 
+  /// Busca todas as cidades salvas no banco de dados local
+  Future<List<Map<String, dynamic>>> getAllCities() async {
+    try {
+      final db = await database;
+      return await db.query('cities', orderBy: 'name ASC');
+    } on DatabaseException catch (e) {
+      throw DatabaseAppException('Erro ao consultar cidades no banco local: ${e.toString()}');
+    } catch (e) {
+      throw const DatabaseAppException('Erro inesperado ao consultar cidades no banco local.');
+    }
+  }
+
   /// Insere uma previsão ([WeatherForecast]) no banco de dados local.
   /// Lança [DatabaseAppException] com mensagem amigável em caso de erro.
   Future<int> insertForecast(WeatherForecast forecast) async {

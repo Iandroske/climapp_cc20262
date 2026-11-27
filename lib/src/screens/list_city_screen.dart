@@ -120,27 +120,60 @@ class _ListCityScreenState extends State<ListCityScreen> {
       );
     }
 
-    return ListView.builder(
+    return Column(
       key: const ValueKey('success_state'),
-      itemCount: controller.filteredCities.length,
-      itemBuilder: (context, index) {
-        final city = controller.filteredCities[index];
-        return CityTileWidget(
-          cityName: city.cityName,
-          icon: city.conditionSlug,
-          temperature: city.temp,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WeatherCityScreen(
-                  weatherForecastModel: city,
+      children: [
+        if (controller.isOfflineData) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.amberAccent),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 8,
+              children: [
+                Icon(Icons.cloud_off_rounded, color: Colors.amberAccent, size: 20),
+                Text(
+                  'Exibindo cidades do cache local (Offline)',
+                  style: TextStyle(
+                    color: Colors.amberAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
+              ],
+            ),
+          ),
+        ],
+        Expanded(
+          child: ListView.builder(
+            itemCount: controller.filteredCities.length,
+            itemBuilder: (context, index) {
+              final city = controller.filteredCities[index];
+              return CityTileWidget(
+                cityName: city.cityName,
+                icon: city.conditionSlug,
+                temperature: city.temp,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WeatherCityScreen(
+                        weatherForecastModel: city,
+                        cityName: city.cityName,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

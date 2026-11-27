@@ -1,7 +1,9 @@
 import 'package:climapp_cc20262/src/core/exceptions/app_exception.dart';
 import 'package:climapp_cc20262/src/core/result.dart';
 import 'package:climapp_cc20262/src/database/database_helper.dart';
+import 'package:climapp_cc20262/src/models/forecast_model.dart';
 import 'package:climapp_cc20262/src/models/weather_forecast.dart';
+import 'package:climapp_cc20262/src/models/weather_forecast_model.dart';
 
 /// Repositório local responsável pela persistência e recuperação de previsões do tempo no SQLite.
 /// Encapsula o [DatabaseHelper] e converte todas as exceções em um objeto [Result<T>].
@@ -46,6 +48,99 @@ class LocalWeatherRepository {
       return Failure(e);
     } catch (e) {
       return Failure(DatabaseAppException('Erro ao consultar previsões locais: $e'));
+    }
+  }
+
+  /// Busca todas as cidades salvas no SQLite, reconstruindo a lista de [WeatherForecastModel].
+  Future<Result<List<WeatherForecastModel>>> getAllSavedCities() async {
+    try {
+      final cityMaps = await _databaseHelper.getAllCities();
+      final List<WeatherForecastModel> resultList = [];
+
+      for (final map in cityMaps) {
+        final cityId = map['id'] as int;
+        final name = map['name'] as String;
+
+        final forecasts = await _databaseHelper.getForecastsByCityId(cityId);
+
+        if (forecasts.isNotEmpty) {
+          final forecastModels = forecasts.map((item) {
+            return ForecastModel(
+              date: item.data,
+              weekday: item.data,
+              max: item.tempMax,
+              min: item.tempMin,
+              humidity: 0,
+              cloudiness: 0.0,
+              rain: 0.0,
+              rainProbability: 0,
+              windSpeedy: '',
+              sunrise: '',
+              sunset: '',
+              moonPhase: 'full',
+              description: item.condicao,
+              condition: item.iconUrl,
+            );
+          }).toList();
+
+          final first = forecasts.first;
+          final model = WeatherForecastModel(
+            temp: ((first.tempMax + first.tempMin) / 2).round(),
+            date: first.data,
+            time: 'Offline',
+            conditionCode: '28',
+            description: '${first.condicao} (Offline)',
+            currently: 'dia',
+            city: name,
+            imgId: '28',
+            humidity: 0,
+            cloudiness: 0.0,
+            rain: 0.0,
+            windSpeedy: '',
+            windDirection: 0,
+            windCardinal: '',
+            sunrise: '',
+            sunset: '',
+            moonPhase: 'full',
+            conditionSlug: first.iconUrl,
+            cityName: name,
+            timezone: '',
+            forecast: forecastModels,
+          );
+          resultList.add(model);
+        } else {
+          final fallbackModel = WeatherForecastModel(
+            temp: 25,
+            date: 'Hoje',
+            time: 'Offline',
+            conditionCode: '28',
+            description: 'Dados Locais (Sem Previsão)',
+            currently: 'dia',
+            city: name,
+            imgId: '28',
+            humidity: 0,
+            cloudiness: 0.0,
+            rain: 0.0,
+            windSpeedy: '',
+            windDirection: 0,
+            windCardinal: '',
+            sunrise: '',
+            sunset: '',
+            moonPhase: 'full',
+            conditionSlug: 'cloud',
+            cityName: name,
+            timezone: '',
+            forecast: [],
+          );
+          resultList.add(fallbackModel);
+        }
+      }
+
+      return Success(resultList);
+    } on AppException catch (e) {
+      return Failure(e);
+    } catch (e) {
+      return Failure(DatabaseAppException('Erro ao consultar cidades salvas: $e'));
     }
   }
 
