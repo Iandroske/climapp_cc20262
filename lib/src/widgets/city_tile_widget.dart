@@ -1,6 +1,6 @@
 import 'package:climapp_cc20262/src/enums/enviroments_enum.dart';
+import 'package:climapp_cc20262/src/widgets/custom_weather_svg.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class CityTileWidget extends StatelessWidget {
   const CityTileWidget({
@@ -31,7 +31,11 @@ class CityTileWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         child: ListTile(
           onTap: onTap,
-          leading: SvgPicture.network('${envEnum.imageUrl}$icon.svg'),
+          leading: CustomWeatherSvg(
+            imageUrl: '${envEnum.imageUrl}$icon.svg',
+            width: 40,
+            height: 40,
+          ),
           titleTextStyle: const TextStyle(fontSize: 20),
           textColor: Colors.white,
           title: Text(cityName, textAlign: TextAlign.center),

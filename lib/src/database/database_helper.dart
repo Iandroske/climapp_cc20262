@@ -12,8 +12,8 @@ class DatabaseHelper {
   static Database? _database;
   static const String _dbName = 'climapp.db';
 
-  /// Versão incrementada para acionar a migração (versão 2 inclui a tabela forecasts)
-  static const int _dbVersion = 2;
+  /// Versão incrementada para 3 (garante chave UNIQUE em cities)
+  static const int _dbVersion = 3;
 
   /// Retorna a instância do banco de dados, inicializando-a se necessário
   Future<Database> get database async {
@@ -45,12 +45,12 @@ class DatabaseHelper {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
-  /// Criação inicial das tabelas (versão 1 + versão 2)
+  /// Criação inicial das tabelas com constraint UNIQUE em name
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE cities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         state TEXT
       )
     ''');
@@ -69,7 +69,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Migração do banco de dados ao incrementar a versão de 1 para 2
+  /// Migração do banco de dados ao incrementar a versão para 3
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
@@ -85,17 +85,44 @@ class DatabaseHelper {
         )
       ''');
     }
+
+    if (oldVersion < 3) {
+      // Deleta cidades duplicadas mantendo apenas o registro de menor ID
+      await db.execute(
+        'DELETE FROM cities WHERE id NOT IN (SELECT MIN(id) FROM cities GROUP BY name)',
+      );
+      // Cria o índice único sem conflitos
+      await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_cities_name ON cities(name);',
+      );
+    }
   }
 
-  /// Insere uma cidade no banco de dados local
+  /// Insere uma cidade no banco de dados local evitando duplicidades.
+  /// Usa [ConflictAlgorithm.ignore] e retorna o ID da cidade (existente ou nova).
   Future<int> insertCity(String name, String? state) async {
     try {
       final db = await database;
-      return await db.insert(
+
+      await db.insert(
         'cities',
         {'name': name, 'state': state},
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
       );
+
+      final List<Map<String, dynamic>> maps = await db.query(
+        'cities',
+        columns: ['id'],
+        where: 'name = ?',
+        whereArgs: [name],
+        limit: 1,
+      );
+
+      if (maps.isNotEmpty) {
+        return maps.first['id'] as int;
+      }
+
+      throw const DatabaseAppException('Erro ao obter o ID da cidade inserida.');
     } on DatabaseException catch (e) {
       throw DatabaseAppException('Erro ao salvar cidade no banco local: ${e.toString()}');
     } catch (e) {
@@ -103,11 +130,15 @@ class DatabaseHelper {
     }
   }
 
-  /// Busca todas as cidades salvas no banco de dados local
+  /// Busca todas as cidades salvas sem duplicatas no banco de dados local
   Future<List<Map<String, dynamic>>> getAllCities() async {
     try {
       final db = await database;
-      return await db.query('cities', orderBy: 'name ASC');
+      return await db.query(
+        'cities',
+        groupBy: 'name',
+        orderBy: 'name ASC',
+      );
     } on DatabaseException catch (e) {
       throw DatabaseAppException('Erro ao consultar cidades no banco local: ${e.toString()}');
     } catch (e) {
@@ -116,7 +147,6 @@ class DatabaseHelper {
   }
 
   /// Insere uma previsão ([WeatherForecast]) no banco de dados local.
-  /// Lança [DatabaseAppException] com mensagem amigável em caso de erro.
   Future<int> insertForecast(WeatherForecast forecast) async {
     try {
       final db = await database;
@@ -134,7 +164,6 @@ class DatabaseHelper {
   }
 
   /// Busca as previsões associadas a um [cityId].
-  /// Lança [DatabaseAppException] em caso de falha no SQLite.
   Future<List<WeatherForecast>> getForecastsByCityId(int cityId) async {
     try {
       final db = await database;
@@ -154,7 +183,6 @@ class DatabaseHelper {
   }
 
   /// Remove previsões antigas/existentes referentes a uma determinada cidade ([cityId]).
-  /// Lança [DatabaseAppException] com mensagem amigável em caso de erro.
   Future<int> deleteOldForecasts(int cityId) async {
     try {
       final db = await database;

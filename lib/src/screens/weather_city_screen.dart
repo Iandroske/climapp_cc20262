@@ -3,9 +3,9 @@ import 'package:climapp_cc20262/src/enums/enviroments_enum.dart';
 import 'package:climapp_cc20262/src/models/weather_forecast_model.dart';
 import 'package:climapp_cc20262/src/repositories/local_weather_repository.dart';
 import 'package:climapp_cc20262/src/services/weather_service.dart';
+import 'package:climapp_cc20262/src/widgets/custom_weather_svg.dart';
 import 'package:climapp_cc20262/src/widgets/offline_error_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class WeatherCityScreen extends StatefulWidget {
   final WeatherForecastModel? weatherForecastModel;
@@ -175,10 +175,10 @@ class _WeatherCityScreenState extends State<WeatherCityScreen> {
                     color: Colors.white,
                   ),
                 ),
-                SvgPicture.network(
-                  '${envEnum.imageUrl}${model.conditionSlug}.svg',
+                CustomWeatherSvg(
+                  imageUrl: '${envEnum.imageUrl}${model.conditionSlug}.svg',
                   height: 80,
-                  placeholderBuilder: (_) => const Icon(Icons.wb_sunny, size: 60, color: Colors.amber),
+                  placeholder: const Icon(Icons.wb_sunny, size: 60, color: Colors.amber),
                 ),
                 Text(
                   '${model.temp}°',
