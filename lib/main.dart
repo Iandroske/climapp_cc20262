@@ -14,17 +14,31 @@ import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint("Erro ao inicializar Firebase no background: $e");
+  }
   debugPrint("Background Handler ID: ${message.messageId}");
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint("Erro ao inicializar Firebase App: $e");
+  }
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   final notificationService = NotificationService();
-  await notificationService.initialize();
+  try {
+    await notificationService.initialize();
+  } catch (e) {
+    debugPrint("Erro ao inicializar NotificationService: $e");
+  }
 
   runApp(const MyApp());
 }
